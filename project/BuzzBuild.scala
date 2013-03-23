@@ -1,11 +1,21 @@
+/**
+ *  Copyright (C) 2013 Helena Edelson <http://www.helenaedelson.com>
+ */
+
+package buzz
+
 import sbt._
 import Keys._
+import com.github.siasia.WebPlugin.webSettings
+import com.typesafe.sbt.SbtScalariform
+import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 
 /**
 * @author Helena Edelson
 */ 
 object Settings {
-  val buildOrganization = "com.helenaedelson.hackathon"
+
+  val buildOrganization = "com.helenaedelson.buz"
   val buildVersion      = "0.1-SNAPSHOT"
   val buildScalaVersion = Version.Scala
   val buildSettings = Defaults.defaultSettings ++ Seq(
@@ -16,7 +26,7 @@ object Settings {
 
   import Resolvers._
 
-  val defaultSettings = buildSettings ++ Seq(
+  val defaultSettings = buildSettings ++ webSettings ++ formatSettings ++ Seq(
     resolvers ++= Seq(typesafeRepo),
     scalacOptions ++= Seq("-encoding", "UTF-8", "-deprecation", "-unchecked"),
     javacOptions ++= Seq("-source", "1.7", "-target", "1.7", "-Xlint:unchecked", "-Xlint:deprecation"),
@@ -33,6 +43,19 @@ object Settings {
       <exclude module="slf4j-log4j12"/>
     </dependencies>
   )
+
+  lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
+    ScalariformKeys.preferences in Compile := formattingPreferences,
+    ScalariformKeys.preferences in Test    := formattingPreferences
+  )
+
+  def formattingPreferences = {
+    import scalariform.formatter.preferences._
+    FormattingPreferences()
+      .setPreference(RewriteArrowSymbols, true)
+      .setPreference(AlignParameters, true)
+      .setPreference(AlignSingleLineCaseStatements, true)
+  }
 }
 
 object Resolvers {
@@ -46,7 +69,7 @@ object Dependencies {
 
   val akka = Seq(akkaActor, akkaRemote, akkaCluster, akkaSlf4j)
 
-  val core = Seq(astyanax, jodaConvert, jodaTime, logback, twitterCore, twitterStream, slf4j) ++ akka ++ test
+  val core = Seq(astyanax, guava, jetty, jodaConvert, jodaTime, logback, scalatra, servletApi, slf4j, twitterCore, twitterStream) ++ akka ++ test
 }
 
 object Version {
@@ -64,9 +87,13 @@ object Dependency {
   val akkaCluster   = "com.typesafe.akka"       %% "akka-cluster-experimental"   % Akka     % "compile"
   val astyanax      = "com.netflix.astyanax"    %  "astyanax"                    % "1.0.6"  % "compile"
   val bijection     = "com.twitter"             %% "bijection-core"              % "2.9.2"  % "compile"
+  val guava         = "com.google.guava"        % "guava"                        % "11.0.2" % "compile"
+  val jetty = "org.mortbay.jetty" % "jetty" % "6.1.22" % "container"
   val jodaConvert   = "org.joda"                %  "joda-convert"                % "1.2"    % "compile"
   val jodaTime      = "joda-time"               %  "joda-time"                   % "2.1"    % "compile"
   val logback       = "ch.qos.logback"          %  "logback-classic"             % "1.0.10" % "compile"
+  val scalatra      = "org.scalatra"            %% "scalatra"                    % "2.2.0"  % "compile"
+  val servletApi    = "org.eclipse.jetty.orbit" % "javax.servlet"                % "3.0.0.v201112011016" % "compile;container" artifacts (Artifact("javax.servlet", "jar", "jar"))
   val slf4j         = "org.slf4j"               %  "slf4j-api"                   % "1.7.4"  % "compile"
   val twitterCore   = "org.twitter4j"           %  "twitter4j-core"              % "3.0.3"  % "compile"
   val twitterStream = "org.twitter4j"           %  "twitter4j-stream"            % "3.0.3"  % "compile"
@@ -77,16 +104,16 @@ object Dependency {
   }
 }
 
-object HackathonBuild extends Build {
+object BuzzBuild extends Build {
   import java.io.File._
   import Settings._
 
-  lazy val hackathon = Project(
-    id = "hackathon",
+  lazy val buzz = Project(
+    id = "buzz",
     base = file("."),
     settings = defaultSettings ++ Seq(
-      libraryDependencies ++= Dependencies.core
-      /*mainRunNobootcpSetting,
+      libraryDependencies ++= Dependencies.core/*,
+      mainRunNobootcpSetting,
       testRunNobootcpSetting,
       testNobootcpSetting*/
     )
