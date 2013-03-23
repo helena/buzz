@@ -5,16 +5,15 @@
 package com.helenaedelson.buzz
 
 import scala.concurrent.duration.Duration
-import scala.util.control.NonFatal
 import scala.util.Try
 import scala.collection.JavaConverters._
-import akka.actor.{ ActorRef, Props, ActorLogging, Actor }
+import akka.actor.{ ActorRef, ActorLogging, Actor }
 import twitter4j._
 import twitter4j.conf.Configuration
 import com.helenaedelson.buzz.InternalSearchAction._
 import com.helenaedelson.buzz.InternalBuzzDomain._
-import com.helenaedelson.buzz.UserPersistAction._
 import com.helenaedelson.buzz.InternalBuzzDomain.Geo
+import com.helenaedelson.buzz.UserPersistAction._
 import com.helenaedelson.buzz.UserPersistAction.PersistEnvelope
 
 /**
@@ -53,7 +52,7 @@ class BuzzSearch(settings: Settings, config: Configuration, searchQuery: SearchQ
         val result = twitter.search(query)
         val tweets: Set[Status] = result.getTweets.asScala.toSet
         tweets foreach (status ⇒ dapi ! PersistEnvelope(Tweet(word, geo, status)))
-      } recover { case e: Throwable ⇒ log.error("rate limit hit.") } //statusCode=429 Rate limit exceeded
+      } recover { case e: Throwable ⇒ log.error("Rate limit exceeded") }
     }
   }
 }

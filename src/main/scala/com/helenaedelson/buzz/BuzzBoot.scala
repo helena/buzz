@@ -13,43 +13,28 @@ import javax.servlet.{ ServletContextListener, ServletContextEvent }
 
 import com.helenaedelson.buzz.InternalTwitterDomain.TwitterSettings
 import com.helenaedelson.buzz.InternalBuzzDomain._
-import util.control.NonFatal
 import com.helenaedelson.buzz.GeoCodes._
 
 /**
  * @author Helena Edelson
  */
-object BuzzApp extends Bootable {
-  import settings._
-  import GeoCodes.coordinates
-
-  def main(args: Array[String]): Unit = {
-    val twitterSettings = TwitterSettings(settings)
-    import twitterSettings._
-
-    val searches: Set[SearchQuery] = SearchChannels.map(SearchQuery(_, coordinates, SearchRadius, SearchRadiusUnit))
-
-    ordered ++= searches map (search ⇒ system.actorOf(Props(new BuzzSearch(settings, config, search, dapi)), search.actor))
-
-  }
-}
 
 private[buzz] trait Bootable {
 
   val settings = new Settings()
   import settings._
-  import GeoCodes._
 
   var ordered: IndexedSeq[ActorRef] = IndexedSeq.empty
 
-  /**
-   * The ActorSystem the application will use.
-   */
   implicit val system = ActorSystem(SystemName)
 
   protected val log = akka.event.Logging(system, system.name)
 
   system.registerOnTermination(ordered foreach (gracefulShutdown(_)))
+
+  val twitterSettings = TwitterSettings(settings)
+
+  val searches = SearchChannels.map(SearchQuery(_, coordinates, SearchRadius, SearchRadiusUnit))
 
   val dapi = system.actorOf(Props(new CassandraApi(settings)), "data-api")
 
@@ -59,15 +44,10 @@ private[buzz] trait Bootable {
 }
 
 /**
- * Servlet Container
+ * Servlet Container Boot
  */
 class BuzzServletContextListener extends ServletContextListener with Bootable {
-  import settings._
-
-  val twitterSettings = TwitterSettings(settings)
   import twitterSettings._
-
-  val searches: Set[SearchQuery] = SearchChannels.map(SearchQuery(_, coordinates, SearchRadius, SearchRadiusUnit))
 
   override def contextInitialized(event: ServletContextEvent): Unit = try {
     ordered ++= searches map (search ⇒ system.actorOf(Props(new BuzzSearch(settings, config, search, dapi)), search.actor))
@@ -76,5 +56,18 @@ class BuzzServletContextListener extends ServletContextListener with Bootable {
   }
 
   override def contextDestroyed(event: ServletContextEvent): Unit = system.shutdown()
-
 }
+
+/**
+ * Integration Test Boot
+ */
+object BuzzApp extends Bootable {
+  import twitterSettings._
+  import settings._
+  import GeoCodes.coordinates
+
+  def main(args: Array[String]): Unit = {
+    ordered ++= searches map (search ⇒ system.actorOf(Props(new BuzzSearch(settings, config, search, dapi)), search.actor))
+  }
+}
+

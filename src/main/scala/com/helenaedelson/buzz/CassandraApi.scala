@@ -6,9 +6,9 @@ package com.helenaedelson.buzz
 
 import scala.util.Try
 import scala.collection.JavaConversions._
-import com.netflix.astyanax.{ MutationBatch, Keyspace, AstyanaxContext }
+import com.netflix.astyanax.{ Keyspace, AstyanaxContext }
 import com.netflix.astyanax.impl.AstyanaxConfigurationImpl
-import com.netflix.astyanax.connectionpool.{ OperationResult, NodeDiscoveryType }
+import com.netflix.astyanax.connectionpool.NodeDiscoveryType
 import com.netflix.astyanax.connectionpool.impl.{ CountingConnectionPoolMonitor, ConnectionPoolConfigurationImpl }
 import com.netflix.astyanax.thrift.ThriftFamilyFactory
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException
@@ -49,8 +49,6 @@ private[helenaedelson] class CassandraApi(val settings: Settings) extends DataAp
   }
 
   def addTweet(tweet: Tweet): Unit = {
-    log.debug("Persisting: @{}: {}", tweet.username, tweet.text)
-
     val mutation = cassandraContext.getEntity.prepareMutationBatch()
 
     mutation.withRow(Tweets, tweet.id)
